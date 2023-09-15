@@ -12,6 +12,14 @@ from torch.autograd import Variable
 from trpo import trpo_step
 from utils import *
 
+wandb_record = True
+
+if wandb_record:
+    import wandb
+    wandb.init(project="my_TRPO")
+    wandb.run.name = "github_version"
+wand_step = 0
+
 torch.utils.backcompat.broadcast_warning.enabled = True
 torch.utils.backcompat.keepdim_warning.enabled = True
 
@@ -91,6 +99,7 @@ def update_params(batch):
         values_ = value_net(Variable(states))
 
         value_loss = (values_ - targets).pow(2).mean()
+        # print("value_loss", value_loss)
 
         # weight decay
         for param in value_net.parameters():
@@ -174,3 +183,10 @@ for i_episode in count(1):
     if i_episode % args.log_interval == 0:
         print('Episode {}\tLast reward: {}\tAverage reward {:.2f}'.format(
             i_episode, reward_sum, reward_batch))
+
+    if wandb_record:
+        wand_step += 1
+        wandb.log({"reward": reward_sum}, step=int(wand_step))
+
+    if i_episode >= 1000:
+        break
